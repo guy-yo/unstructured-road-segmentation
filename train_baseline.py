@@ -32,3 +32,33 @@ class RoadSegmentationDataset(Dataset):
             mask = self.transform(mask)
 
         return image, mask
+
+def get_dataloaders(data_root, batch_size=4):
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor()
+    ])
+
+    train_images = os.path.join(data_root, "images", "train")
+    train_masks = os.path.join(data_root, "masks", "train")
+
+    val_images = os.path.join(data_root, "images", "val")
+    val_masks = os.path.join(data_root, "masks", "val")
+
+    train_dataset = RoadSegmentationDataset(
+        train_images, train_masks, transform=transform
+    )
+    val_dataset = RoadSegmentationDataset(
+        val_images, val_masks, transform=transform
+    )
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False
+    )
+
+    return train_loader, val_loader
+``
+
