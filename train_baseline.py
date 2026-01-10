@@ -5,9 +5,14 @@ U-Net for road segmentation only (no flow, no path)
 
 import os
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+
+# =========================
+# Dataset
+# =========================
 
 class RoadSegmentationDataset(Dataset):
     def __init__(self, images_dir, masks_dir, transform=None):
@@ -32,6 +37,7 @@ class RoadSegmentationDataset(Dataset):
             mask = self.transform(mask)
 
         return image, mask
+
 
 def get_dataloaders(data_root, batch_size=4):
     transform = transforms.Compose([
@@ -60,10 +66,11 @@ def get_dataloaders(data_root, batch_size=4):
     )
 
     return train_loader, val_loader
-``
-import torch.nn as nn
-import torch.nn.functional as F
 
+
+# =========================
+# U-Net model
+# =========================
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -100,30 +107,41 @@ class UNet(nn.Module):
         x = torch.cat([x, x1], dim=1)
         x = self.dec1(x)
 
-        return
+        return self.out_conv(x)
+
+
+# =========================
+# Metrics
+# =========================
 
 def compute_iou(preds, targets, threshold=0.5):
     preds = (preds > threshold).float()
+    targets = targets.float()
     intersection = (preds * targets).sum()
     union = preds.sum() + targets.sum() - intersection
     return (intersection / (union + 1e-6)).item()
 
+
+# =========================
+# Training
+# =========================
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_root = "DATA"  # לשנות אם צריך
+    data_root = "DATA"  # שנה אם צריך
     train_loader, val_loader = get_dataloaders(data_root)
 
     model = UNet().to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-    epochs = 5  # קצר, זה baseline
+    epochs = 5  # baseline קצר
     for epoch in range(epochs):
         model.train()
         for images, masks in train_loader:
             images = images.to(device)
-            masks = masks.to(device)
+            masks = masks.to(device).float()
 
             optimizer.zero_grad()
             outputs = model(images)
@@ -136,13 +154,12 @@ def main():
         with torch.no_grad():
             for images, masks in val_loader:
                 images = images.to(device)
-                masks = masks.to(device)
+                masks = masks.to(device).float()
                 outputs = torch.sigmoid(model(images))
                 iou_scores.append(compute_iou(outputs, masks))
 
         print(f"Epoch {epoch+1}/{epochs} | Val IoU: {sum(iou_scores)/len(iou_scores):.4f}")
 
+
 if __name__ == "__main__":
     main()
-
-
