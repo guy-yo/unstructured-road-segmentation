@@ -61,4 +61,45 @@ def get_dataloaders(data_root, batch_size=4):
 
     return train_loader, val_loader
 ``
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, x):
+        return self.block(x)
+
+
+class UNet(nn.Module):
+    def __init__(self, in_channels=3, out_channels=1):
+        super().__init__()
+
+        self.enc1 = DoubleConv(in_channels, 64)
+        self.enc2 = DoubleConv(64, 128)
+        self.pool = nn.MaxPool2d(2)
+
+        self.up = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.dec1 = DoubleConv(128, 64)
+
+        self.out_conv = nn.Conv2d(64, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        x1 = self.enc1(x)
+        x2 = self.enc2(self.pool(x1))
+
+        x = self.up(x2)
+        x = torch.cat([x, x1], dim=1)
+        x = self.dec1(x)
+
+        return
+
 
