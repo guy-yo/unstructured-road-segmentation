@@ -102,4 +102,47 @@ class UNet(nn.Module):
 
         return
 
+def compute_iou(preds, targets, threshold=0.5):
+    preds = (preds > threshold).float()
+    intersection = (preds * targets).sum()
+    union = preds.sum() + targets.sum() - intersection
+    return (intersection / (union + 1e-6)).item()
+
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    data_root = "DATA"  # לשנות אם צריך
+    train_loader, val_loader = get_dataloaders(data_root)
+
+    model = UNet().to(device)
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+    epochs = 5  # קצר, זה baseline
+    for epoch in range(epochs):
+        model.train()
+        for images, masks in train_loader:
+            images = images.to(device)
+            masks = masks.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, masks)
+            loss.backward()
+            optimizer.step()
+
+        model.eval()
+        iou_scores = []
+        with torch.no_grad():
+            for images, masks in val_loader:
+                images = images.to(device)
+                masks = masks.to(device)
+                outputs = torch.sigmoid(model(images))
+                iou_scores.append(compute_iou(outputs, masks))
+
+        print(f"Epoch {epoch+1}/{epochs} | Val IoU: {sum(iou_scores)/len(iou_scores):.4f}")
+
+if __name__ == "__main__":
+    main()
+
 
