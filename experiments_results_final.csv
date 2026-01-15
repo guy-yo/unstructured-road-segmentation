@@ -1,0 +1,5 @@
+Name,Backbone,Pot Loss,Flow Loss,Best Val Loss,IoU,Precision,Recall,EPE (Flow Error),FPS,Time (min)
+base_R18_MSE,resnet18,mse,mse,0.0518,0.747,0.788,0.936,0.132,289.2,12.2
+base_R18_BCE,resnet18,bce,mse,0.2511,0.797,0.863,0.91,0.131,308.5,12.4
+base_R18_FullLoss,resnet18,bce,cosine,0.4892,0.737,0.759,0.961,0.14,188.8,11.6
+heavy_R50_FullLoss,resnet50,bce,cosine,0.4307,0.801,0.877,0.901,0.12,90.6,13.8

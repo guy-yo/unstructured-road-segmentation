@@ -1,0 +1,4 @@
+Name,Backbone,Flow Loss,IoU,EPE (Flow Error),FPS
+R50_BCE_MSE,resnet50,mse,0.795,0.117,88.9
+R50_BCE_Combo,resnet50,combo,0.779,0.137,95.9
+R18_BCE_Combo,resnet18,combo,0.78,0.148,197.3
